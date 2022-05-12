@@ -23,6 +23,22 @@ div.cam {
   z-index: 10;
 }
 
+div.guess {
+  background-color: #777;
+  opacity: 0.5;
+
+  overflow: hidden;
+  white-space: nowrap;
+  width: .51cm;
+  height: .51cm;
+  position: absolute;
+
+  left: 63px;
+
+  display: none; /*maybe remove*/
+  z-index: 10;
+}
+
 div.cam button {
   overflow: hidden;
   display: inline-block;
@@ -35,6 +51,8 @@ div.cam button {
   height: .5cm;
   top: 100%;
 }
+
+
 
 div.cam button:hover {
     background-color: #777;
@@ -560,6 +578,7 @@ console.log(peace);
             detectType = -1;
       }
 
+      document.getElementById("emojiguess").innerHTML = String.fromCodePoint(emojicodes[detectType]);
 
       if(detections > 20)
       {
@@ -799,6 +818,10 @@ END CANVAS SCRIPT
 
 <div id="output_canvas_div2" class="cam">
   <button id="cambutton2">:))</button>
+</div>
+
+<div id="emojiguess" class="guess">
+  
 </div>
 
 <canvas id=camCanvas class="output_canvas" width="1280" height="720" style="display:none"></canvas>  

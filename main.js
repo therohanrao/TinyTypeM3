@@ -146,14 +146,17 @@ window.onload=function(){
         var x = document.getElementById("scrollmenuid");
         var y = document.getElementById("camCanvas");
         var z = document.getElementById("output_canvas_div2");
+        var a = document.getElementById("emojiguess");
         if (x.style.display === "none") {
             x.style.display = "block";
             y.style.display = "none";
             z.style.display = "none";
+            a.style.display = "none";
         } else {
             x.style.display = "none";
             y.style.display = "block"; //CHANGE THIS BACK TO BLOCXK
             z.style.display = "block";
+            a.style.display = "block";
         }
 
         });
@@ -163,14 +166,17 @@ window.onload=function(){
         var x = document.getElementById("scrollmenuid");
         var y = document.getElementById("camCanvas");
         var z = document.getElementById("output_canvas_div2");
+        var a = document.getElementById("emojiguess");
         if (x.style.display === "none") {
             x.style.display = "block";
             y.style.display = "none";
             z.style.display = "none";
+            a.style.display = "none";
         } else {
             x.style.display = "none";
             y.style.display = "block";
             z.style.display = "block";
+            a.style.display = "block";
         }
 
         });
