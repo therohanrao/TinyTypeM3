@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+
+canvas.canvas {
+  background-color: #777;
+  position: relative;
+  display: none; /*maybe remove*/
+}
+
+div.cam {
+  background-color: #777;
+  overflow: hidden;
+  white-space: nowrap;
+  width: .51cm;
+  height: .51cm;
+  position: absolute;
+
+  display: none; /*maybe remove*/
+  z-index: 10;
+}
+
+div.cam button {
+  overflow: hidden;
+  display: inline-block;
+  color: white;
+  background-color: #333;
+  text-align: center;
+  /*padding: .20cm;*/
+  text-decoration: none;
+  width: .5cm;
+  height: .5cm;
+  top: 100%;
+}
+
+div.cam button:hover {
+    background-color: #777;
+}
+
+
+div.canvasbutton {
+  background-color: #777;
+  overflow: auto;
+  white-space: nowrap;
+  width: .51cm;
+  height: .51cm;
+  position: absolute;
+
+  display: none; /*maybe remove*/
+  z-index: 10;
+}
+
+div.canvasbutton button {
+  display: inline-block;
+  color: white;
+  background-color: #333;
+  text-align: center;
+  /*padding: .20cm;*/
+  text-decoration: none;
+  width: .5cm;
+  height: .5cm;
+  top: 100%;
+}
+
+div.canvasbutton button:hover {
+    background-color: #777;
+}
+
+
+div.scrollmenu {
+  background-color: #333;
+  overflow: auto;
+  white-space: nowrap;
+  width: 2cm;
+  height: 2cm;
+  position: absolute;
+  /*top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);*/
+  display: block; /*maybe remove*/
+}
+
+div.scrollmenu button {
+  display: inline-block;
+  color: white;
+  background-color: #333;
+  text-align: center;
+  /*padding: .20cm;*/
+  text-decoration: none;
+  width: .5cm;
+  height: .5cm;
+  top: 100%;
+}
+
+div.scrollmenu button:hover {
+    background-color: #777;
+}
+
+div.btns {
+  display: block;
+}
+
+input {
+  position: absolute;
+  top: 7%;
+  left: 20%;
+  transform: translate(-50%,-50%);
+}
+
+div.utilities {
+  position: sticky !important;
+  top: 0%;
+  left: 0%;
+
+}
+
+div.utilities button{ 
+  text-align: center;
+  transition: all 0.3s ease;
+  color: white;
+  font-size: .25cm;
+  width: 1cm;
+  height: .5cm;
+}
+
+div.utilities button:hover {
+    background-color: #777;
+}
+
+</style>
+
+<script src="main.js"></script>
+
+<!--
+---------------
+EMOJICAM SCRIPT
+---------------
+-->
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+<script type="module">
+  const videoElement = document.getElementsByClassName('input_video')[0];
+  var canvas =  document.getElementById("camCanvas");
+  var canvasElement =  document.getElementById("camCanvas");
+  var canvasCtx = canvasElement.getContext('2d');
+
+  const SCALING_FACTOR = .32;
+  const EXTRA_SCALING = 0.5625;
+
+  canvasCtx.canvas.width = EXTRA_SCALING * SCALING_FACTOR * canvas.width;
+  canvasCtx.canvas.height = SCALING_FACTOR * canvas.height;
+
+  canvasCtx.scale(SCALING_FACTOR, SCALING_FACTOR);
+  
+  var handPoints = [[],[],[],[],[]];
+  var camGuess = "none";
+
+  function camClick() {
+    console.log(camGuess);
+    let myGuess = "none";
+    switch(camGuess) {
+    
+
+
+    case "zot":
+      myGuess = String.fromCodePoint(0x1F91F);
+      break;
+    case "thumbUp":
+      myGuess = String.fromCodePoint(0x1F44D);
+      break;
+    case "thumbDown":
+      myGuess = String.fromCodePoint(0x1F44E);
+      break;
+    case "okay":
+      myGuess = String.fromCodePoint(0x1F44C);
+      break;
+    case "peace":
+      myGuess = String.fromCodePoint(0x270C);
+      break;
+    case "fu":
+      myGuess = String.fromCodePoint(0x1F595);
+      break;
+    
+  }
+
+  return myGuess;
+
+  }
+/*
+ZOT:
+thumb
+4: {x: 0.31694239377975464, y: 0.6179196834564209, 
+  index
+8: {x: 0.3832240104675293, y: 0.4437006711959839, 
+  middle
+12: {x: 0.3288104832172394, y: 0.6051124334335327, 
+  ring
+16: {x: 0.31360578536987305, y: 0.611163854598999, 
+  pinkie
+20: {x: 0.26471126079559326, y: 0.4791853427886963, 
+
+THUMBS UP:
+4: {x: 0.3624070882797241, y: 0.31689518690109253,
+
+8: {x: 0.42433905601501465, y: 0.5114067196846008,
+
+12: {x: 0.4215940833091736, y: 0.5578356385231018,
+
+16: {x: 0.42062586545944214, y: 0.602996289730072,
+
+20: {x: 0.41665202379226685, y: 0.6461633443832397,
+
+THUMBS DOWN:
+4: {x: 0.46372440457344055, y: 0.5984516143798828,
+
+8: {x: 0.4705895781517029, y: 0.43880584836006165,
+
+12: {x: 0.46402814984321594, y: 0.40057387948036194,
+
+16: {x: 0.46384069323539734, y: 0.36313313245773315,
+
+20: {x: 0.4811830520629883, y: 0.32343414425849915,
+
+
+OKAY:
+4: {x: 0.40128064155578613, y: 0.5917990207672119, 
+
+8: {x: 0.3904159665107727, y: 0.5675054788589478,
+
+12: {x: 0.3343985378742218, y: 0.3993053436279297, 
+
+16: {x: 0.30240675806999207, y: 0.4035903513431549, 
+
+20: {x: 0.26221320033073425, y: 0.4622125029563904,
+
+
+PEACE:
+
+4: {x: 0.3456488251686096, y: 0.5841889977455139, 
+
+8: {x: 0.3952457904815674, y: 0.4077243208885193, 
+
+12: {x: 0.3258180618286133, y: 0.37441563606262207, 
+
+16: {x: 0.3447825312614441, y: 0.5808477401733398, 
+
+20: {x: 0.3447399437427521, y: 0.6102942824363708,
+
+MIDDLE FINGER:
+
+4: {x: 0.4058801233768463, y: 0.5398936867713928,
+
+8: {x: 0.39559173583984375, y: 0.5403111577033997,
+
+12: {x: 0.41509681940078735, y: 0.33637237548828125,
+
+16: {x: 0.4186461269855499, y: 0.5629913210868835,
+
+20: {x: 0.43102598190307617, y: 0.594214916229248,
+
+
+OPEN HAND:
+
+4: {x: 0.4743393361568451, y: 0.5714191794395447,
+
+8: {x: 0.4094138443470001, y: 0.37053632736206055, 
+
+12: {x: 0.35514122247695923, y: 0.34597688913345337, 
+
+16: {x: 0.3161391317844391, y: 0.36350709199905396,
+
+20: {x: 0.2796565294265747, y: 0.42851972579956055, 
+
+CLOSE HAND:
+
+4: {x: 0.37172961235046387, y: 0.5015833377838135, 
+
+8: {x: 0.3839194178581238, y: 0.5332977771759033, 
+
+12: {x: 0.3610284924507141, y: 0.53516685962677, 
+
+16: {x: 0.341962605714798, y: 0.5403276681900024, 
+
+20: {x: 0.3270864486694336, y: 0.527563750743866, 
+*/
+
+var zot = [[0.31694239377975464,0.6179196834564209],[0.3832240104675293,0.4437006711959839],[0.3288104832172394,0.6051124334335327],[0.31360578536987305,0.611163854598999],[0.26471126079559326,0.4791853427886963]];
+var thumbUp = [[0.3624070882797241,0.31689518690109253],[0.42433905601501465,0.5114067196846008],[0.4215940833091736,0.5578356385231018],[0.42062586545944214,0.602996289730072],[0.41665202379226685,0.6461633443832397]];
+var thumbDown = [[0.46372440457344055,0.5984516143798828],[0.4705895781517029,0.43880584836006165],[0.46402814984321594,0.40057387948036194],[0.46384069323539734,0.36313313245773315],[0.4811830520629883,0.32343414425849915]];
+var okay = [[0.40128064155578613,0.5917990207672119],[0.3904159665107727,0.5675054788589478],[0.3343985378742218,0.3993053436279297],[0.30240675806999207,0.4035903513431549],[0.26221320033073425,0.4622125029563904]];
+var peace = [[0.3456488251686096,0.5841889977455139],[0.3952457904815674,0.4077243208885193],[0.3258180618286133,0.37441563606262207],[0.3447825312614441,0.5808477401733398],[0.3447399437427521,0.6102942824363708]];
+var fu = [[0.4058801233768463,0.5398936867713928],[0.39559173583984375,0.5403111577033997],[0.41509681940078735,0.33637237548828125],[0.4186461269855499,0.5629913210868835],[0.43102598190307617,0.594214916229248]];
+var open = [[0.4743393361568451,0.5714191794395447],[0.4094138443470001,0.37053632736206055],[0.35514122247695923,0.34597688913345337],[0.3161391317844391,0.36350709199905396],[0.2796565294265747,0.42851972579956055]];
+var close = [[0.37172961235046387,0.5015833377838135],[0.3839194178581238,0.5332977771759033],[0.3610284924507141,0.53516685962677],[0.341962605714798,0.5403276681900024],[0.3270864486694336,0.527563750743866]];
+
+var detections = 0;
+var detectType = -1;
+
+
+var emojicodes = [0x1F91F, 0x1F44D, 0x1F44E, 0x1F44C, 0x270C, 0x1F595];
+
+function normalize(handPoints) {
+
+  let xmin = 1, xmax = 0, ymin = 1, ymax = 0;
+
+  for(let i = 0; i < 5; i++) {
+    if(handPoints[i][0] < xmin)
+      xmin = handPoints[i][0];
+    if(handPoints[i][0] > xmax)
+      xmax = handPoints[i][0];
+
+    if(handPoints[i][1] < ymin)
+      ymin = handPoints[i][1];
+    if(handPoints[i][1] > ymax)
+      ymax = handPoints[i][1];
+  }
+
+  for(let i = 0; i < 5; i++) {
+    handPoints[i][0] = (handPoints[i][0] - xmin)/(xmax-xmin);
+    handPoints[i][1] = (handPoints[i][1] - ymin)/(ymax-ymin);
+  }
+
+  /*
+  console.log("xmin: " + xmin);
+  console.log("xmax: " + xmax);
+  console.log("ymin: " + ymin);
+  console.log("ymax: "+ ymax);
+*/
+  return handPoints;
+
+}
+
+
+function difference(handPoints, template) {
+
+
+let diff =
+
+(
+(handPoints[0][0] - template[0][0])**2 + 
+(handPoints[1][0] - template[1][0])**2 + 
+(handPoints[2][0] - template[2][0])**2 + 
+(handPoints[3][0] - template[3][0])**2 +
+(handPoints[4][0] - template[4][0])**2 
+) ** .5
+
++
+
+(
+(handPoints[0][1] - template[0][1])**2 + 
+(handPoints[1][1] - template[1][1])**2 + 
+(handPoints[2][1] - template[2][1])**2 + 
+(handPoints[3][1] - template[3][1])**2 +
+(handPoints[4][1] - template[4][1])**2 
+) ** .5
+
+;
+
+return diff;
+
+}
+
+
+function detectEmoji(handPoints) {
+
+let mindiff = 10, diffindex = -1;
+
+let diffs = [difference(handPoints, zot), 
+            difference(handPoints, thumbUp), 
+            difference(handPoints, thumbDown), 
+            difference(handPoints, okay), 
+            difference(handPoints, peace), 
+            difference(handPoints,fu),
+            //difference(handPoints, open), 
+            //difference(handPoints, close)
+            ];
+
+for(let i = 0; i < diffs.length; i++) {
+  if(diffs[i] < mindiff) {
+    mindiff = diffs[i];
+    diffindex = i;
+  }
+}
+
+return diffindex;
+
+}
+
+zot = normalize(zot);
+thumbUp = normalize(thumbUp);
+thumbDown = normalize(thumbDown);
+okay = normalize(okay);
+peace = normalize(peace);
+
+console.log("zot:");
+console.log(zot);
+
+console.log("thumbUp:");
+console.log(thumbUp);
+
+console.log("thumbDown:");
+console.log(thumbDown);
+
+console.log("okay:");
+console.log(okay);
+
+console.log("peace:");
+console.log(peace);
+
+
+
+  var multiHandLandmarks;
+
+  function onResults(results) {
+    canvasCtx.save();
+    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+    canvasCtx.drawImage(
+        results.image, 0, 0, canvasElement.width, canvasElement.height);
+    if (results.multiHandLandmarks) {
+      for (const landmarks of results.multiHandLandmarks) {
+        drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS,
+                       {color: '#00FF00', lineWidth: 5});
+        drawLandmarks(canvasCtx, landmarks, {color: '#FF0000', lineWidth: 2});
+      }
+    }
+    canvasCtx.restore();
+
+    let handDetected = false;
+    if(results.multiHandLandmarks[0])
+    {
+      //console.log(results.multiHandLandmarks[0]);
+
+      //4 8 12 16 20
+      //thumb index middle ring pinkie
+
+      handDetected = true;
+
+      handPoints[0][0] = results.multiHandLandmarks[0][4].x;
+      handPoints[0][1] = results.multiHandLandmarks[0][4].y;
+
+      handPoints[1][0] = results.multiHandLandmarks[0][8].x;
+      handPoints[1][1] = results.multiHandLandmarks[0][8].y;
+
+      handPoints[2][0] = results.multiHandLandmarks[0][12].x;
+      handPoints[2][1] = results.multiHandLandmarks[0][12].y;
+
+      handPoints[3][0] = results.multiHandLandmarks[0][16].x;
+      handPoints[3][1] = results.multiHandLandmarks[0][16].y;
+
+      handPoints[4][0] = results.multiHandLandmarks[0][20].x;
+      handPoints[4][1] = results.multiHandLandmarks[0][20].y;
+
+      //console.log(handPoints[3][0]);
+      
+      
+      let xmin = 1, xmax = 0, ymin = 0, ymax = 1;
+
+      for(let i = 0; i < 5; i++) {
+        if(handPoints[i][0] < xmin)
+          xmin = handPoints[i][0];
+        if(handPoints[i][0] > xmax)
+          xmax = handPoints[i][0];
+
+        if(handPoints[i][1] < ymin)
+          ymin = handPoints[i][1];
+        if(handPoints[i][1] > ymax)
+          ymax = handPoints[i][1];
+      }
+
+      for(let i = 0; i < 5; i++) {
+        handPoints[i][0] = (handPoints[i][0] - xmin)/(xmax-xmin);
+        handPoints[i][1] = (handPoints[i][1] - ymin)/(ymax-ymin);
+      }
+      
+
+      let guess = "none";
+      switch(detectEmoji(handPoints)) {
+        case 0:
+          guess = "zot";
+          break;
+        case 1:
+          guess = "thumbUp";
+          break;
+        case 2:
+          guess = "thumbDown";
+          break;
+        case 3:
+          guess = "okay";
+          break;
+        case 4:
+          guess = "peace";
+          break;
+        case 5:
+          guess = "fu";
+          break;
+        case 6:
+        case 7:
+        default:
+          guess = "none";
+      }
+
+      
+      camGuess = guess;
+
+
+      switch(detectEmoji(handPoints)) {
+        case 0:
+          if(detectType == 0)
+            detections = detections + 1;
+          else {
+            detectType = 0;
+            detections = 1;}
+          break;
+        case 1:
+          if(detectType == 1)
+            detections = detections + 1;
+          else {
+            console.log("running");
+            detectType = 1;
+            detections = 1;}
+          break;
+        case 2:
+          if(detectType == 2)
+            detections = detections + 1;
+          else {
+            detectType = 2;
+            detections = 1;}
+          break;
+        case 3:
+          if(detectType == 3)
+            detections = detections + 1;
+          else {
+            detectType = 3;
+            detections = 1;}
+          break;
+        case 4:
+          if(detectType == 4)
+            detections = detections + 1;
+          else {
+            detectType = 4;
+            detections = 1;}
+          break;
+        case 5:
+          if(detectType == 5)
+            detections = detections + 1;
+          else {
+            detectType = 5;
+            detections = 1;}
+          break;
+        case 6:
+        case 7:
+        default:
+            detectType = -1;
+      }
+
+
+      if(detections > 20)
+      {
+        document.getElementById("buffer").value += String.fromCodePoint(emojicodes[detectType]);
+        console.log("ran emoji code");
+        detections = 0;
+        detectType = -1;
+      }
+
+      //console.log(detections);
+      console.log(detectType);
+      //console.log(guess);
+        
+      //console.log(handPoints);
+      //console.log(peace);
+
+      //console.log(handPoints[3][0]);
+
+    }
+
+
+  }
+  
+  const hands = new Hands({locateFile: (file) => {
+    return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+  }});
+  hands.setOptions({
+    maxNumHands: 2,
+    modelComplexity: 1,
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5
+  });
+  hands.onResults(onResults);
+  
+  const camera = new Camera(videoElement, {
+    onFrame: async () => {
+      await hands.send({image: videoElement});
+    },
+    width: 1280,
+    height: 720
+  });
+  camera.start();
+  </script>
+
+
+<!--
+---------------
+END EMOJICAM SCRIPT
+---------------
+-->
+
+
+<!---
+-------------
+CANVAS SCRIPT
+-------------
+-->
+<script type="text/javascript" src="dollar.js"></script>
+<script type="text/javascript" src="./jquery-1.7.2.min.js"></script>
+<script type="text/javascript">
+  //
+// Startup
+//
+var _isDown, _points, _r, _g, _rc;
+function onLoadEvent()
+{
+  _points = new Array();
+  _r = new DollarRecognizer();
+
+  var canvas = document.getElementById('myCanvas');
+  _g = canvas.getContext('2d');
+  _g.fillStyle = "rgb(0,0,225)";
+  _g.strokeStyle = "rgb(0,0,225)";
+  _g.lineWidth = 3;
+  _g.font = "16px Gentilis";
+  _rc = getCanvasRect(canvas); // canvas rect on page
+  _g.fillStyle = "rgb(255,255,136)";
+  //_g.fillRect(0, 0, _rc.width, 20);
+
+  _isDown = false;
+}
+function getCanvasRect(canvas)
+{
+  var w = canvas.width;
+  var h = canvas.height;
+
+  var cx = canvas.offsetLeft;
+  var cy = canvas.offsetTop;
+  while (canvas.offsetParent != null)
+  {
+    canvas = canvas.offsetParent;
+    cx += canvas.offsetLeft;
+    cy += canvas.offsetTop;
+  }
+  return {x: cx, y: cy, width: w, height: h};
+}
+function getScrollX()
+{
+  var scrollX = $(window).scrollLeft();
+  return scrollX;
+}
+function getScrollY()
+{
+  var scrollY = $(window).scrollTop();
+  return scrollY;
+}
+//
+// Mouse Events
+//
+function mouseDownEvent(x, y, button)
+{
+  document.onselectstart = function() { return false; } // disable drag-select
+  document.onmousedown = function() { return false; } // disable drag-select
+  if (button <= 1)
+  {
+    _isDown = true;
+    x -= _rc.x - getScrollX();
+    y -= _rc.y - getScrollY();
+    if (_points.length > 0)
+      _g.clearRect(0, 0, _rc.width, _rc.height);
+    _points.length = 1; // clear
+    _points[0] = new Point(x, y);
+    //drawText("Recording unistroke...");
+    _g.fillRect(x - 4, y - 3, 9, 9);
+  }
+  else if (button == 2)
+  {
+    //drawText("Recognizing gesture...");
+  }
+}
+function mouseMoveEvent(x, y, button)
+{
+  if (_isDown)
+  {
+    x -= _rc.x - getScrollX();
+    y -= _rc.y - getScrollY();
+    _points[_points.length] = new Point(x, y); // append
+    drawConnectedPoint(_points.length - 2, _points.length - 1);
+  }
+}
+function mouseUpEvent(x, y, button)
+{
+  document.onselectstart = function() { return true; } // enable drag-select
+  document.onmousedown = function() { return true; } // enable drag-select
+  if (_isDown || button == 2)
+  {
+    _isDown = false;
+    if (_points.length >= 10)
+    {
+      var result = _r.Recognize(_points, 0); //CHANGED
+
+      if(result.Name == "left square bracket")
+        document.getElementById("buffer").value += String.fromCodePoint(0x1F642);
+      if(result.Name == "right square bracket")
+      document.getElementById("buffer").value += String.fromCodePoint(0x1F641);
+      if(result.Name == "circle")
+        document.getElementById("buffer").value += String.fromCodePoint(0x1F62E);
+      if(result.Name == "zig-zag")
+        document.getElementById("buffer").value += String.fromCodePoint(0x1F525);
+      if(result.Name == "check")
+        document.getElementById("buffer").value += String.fromCodePoint(0x2705);
+      if(result.Name == "caret")
+        document.getElementById("buffer").value += String.fromCodePoint(0x1F480);
+
+      //drawText("Result: " + result.Name + " (" + round(result.Score,2) + ") in " + result.Time + " ms.");
+    }
+    else // fewer than 10 points were inputted
+    {
+      //drawText("Too few points made. Please try again.");
+    }
+  }
+}
+function drawText(str)
+{
+  _g.fillStyle = "rgb(255,255,136)";
+  _g.fillRect(0, 0, _rc.width, 20);
+  _g.fillStyle = "rgb(0,0,255)";
+  _g.fillText(str, 1, 14);
+}
+function drawConnectedPoint(from, to)
+{
+  _g.beginPath();
+  _g.moveTo(_points[from].X, _points[from].Y);
+  _g.lineTo(_points[to].X, _points[to].Y);
+  _g.closePath();
+  _g.stroke();
+}
+function round(n, d) // round 'n' to 'd' decimals
+{
+  d = Math.pow(10, d);
+  return Math.round(n * d) / d;
+}
+//
+// Unistroke Adding and Clearing
+//
+function onClickAddExisting()
+{
+  if (_points.length >= 10)
+  {
+    var unistrokes = document.getElementById('unistrokes');
+    var name = unistrokes[unistrokes.selectedIndex].value;
+    var num = _r.AddGesture(name, _points);
+    drawText("\"" + name + "\" added. No. of \"" + name + "\" defined: " + num + ".");
+  }
+}
+function onClickAddCustom()
+{
+  var name = document.getElementById('custom').value;
+  if (_points.length >= 10 && name.length > 0)
+  {
+    var num = _r.AddGesture(name, _points);
+    drawText("\"" + name + "\" added. No. of \"" + name + "\" defined: " + num + ".");
+  }
+}
+function onClickCustom()
+{
+  document.getElementById('custom').select();
+}
+function onClickDelete()
+{
+  var num = _r.DeleteUserGestures(); // deletes any user-defined unistrokes
+  alert("All user-defined gestures have been deleted. Only the 1 predefined gesture remains for each of the " + num + " types.");
+}
+// -->
+</script>
+
+<!---
+-------------
+END CANVAS SCRIPT
+-------------
+-->
+
+</head>
+<body>
+
+<video class="input_video" style="display: none;"></video> 
+
+<div id="output_canvas_div2" class="cam">
+  <button id="cambutton2">:))</button>
+</div>
+
+<canvas id=camCanvas class="output_canvas" width="1280" height="720" style="display:none"></canvas>  
+
+<input id="buffer"/>
+
+<div id="canvasid2" class="canvasbutton">
+  <button id="emoji2" >:)</button>
+</div>
+
+
+
+<canvas id="myCanvas" class="canvas" width="75" height="75" offsetleft="100"
+onmousedown="mouseDownEvent(event.clientX, event.clientY, event.button)"
+onmousemove="mouseMoveEvent(event.clientX, event.clientY, event.button)"
+onmouseup="mouseUpEvent(event.clientX, event.clientY, event.button)"
+>
+</canvas>
+
+<div id="scrollmenuid" class="scrollmenu">
+    <div class="utilities">
+        <button id="space">space</button>
+        <button id="back">back</button>
+    </div>
+    <div class = "btns"> 
+        <button id="a">a</button>
+        <button id="c">c</button>
+        <button id="e">e</button>
+        <button id="g">g</button>
+        <button id="i">i</button>
+        <button id="k">k</button>
+        <button id="m">m</button>
+        <button id="o">o</button>
+        <button id="q">q</button>
+        <button id="s">s</button>
+        <button id="u">u</button>
+        <button id="w">w</button>
+        <button id="y">y</button>
+        <button id="comma">,</button>
+        <button id="emoji">:)</button>
+    </div>
+
+    <div class = "btns"> 
+        <button id="b">b</button>
+        <button id="d">d</button>
+        <button id="f">f</button>
+        <button id="h">h</button>
+        <button id="j">j</button>
+        <button id="l">l</button>
+        <button id="n">n</button>
+        <button id="p">p</button>
+        <button id="r">r</button>
+        <button id="t">t</button>
+        <button id="v">v</button>
+        <button id="x">x</button>
+        <button id="z">z</button>
+        <button id="period">.</button>
+        <button id="cambutton">:))</button>
+
+    </div>
+
+</div>
+
+
+</body>
+</html>
